@@ -9,12 +9,19 @@ const passport = require('passport');
 const passportLocalMongoose = require('passport-local-mongoose');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
-const FacebookStrategy = require('passport-facebook');
+const FacebookStrategy = require('passport-facebook').Strategy;
+const https = require('https');
+const http = require('http');
+const fs = require('fs');
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
+const optionsSSL = {
+    key: fs.readFileSync('akash-key.pem'),
+    cert: fs.readFileSync('akash-cert.pem')
+};
 
 
 app.use(session({
@@ -105,7 +112,7 @@ if(process.env.ENV === "PROD"){
     passport.use(new FacebookStrategy({
         clientID: process.env.FACEBOOK_ID,
         clientSecret: process.env.FACEBOOK_SECRET,
-        callbackURL: 'http://localhost:3000/auth/facebook/callback'
+        callbackURL: 'https://localhost:443/auth/facebook/callback'
     },
     (accessToken, refreshToken, profile, cb) => {
         User.findOrCreate({facebookId: profile.id }, (err, user) => {
@@ -132,10 +139,10 @@ app.get("/auth/facebook",
     passport.authenticate('facebook'));
 
 app.get("/auth/facebook/callback", 
-    passport.authenticate('facebook', {failureRedirect: '/login'})),
+    passport.authenticate('facebook', {failureRedirect: '/login'}),
     (req, res) => {
         res.redirect('/secrets');
-    }
+    });
 
 app.get("/login", (req, res) => {
     res.render('login');
@@ -148,7 +155,6 @@ app.get("/register", (req, res) => {
 app.get("/secrets", (req, res) => {
     if(req.isAuthenticated()){
         res.render('secrets');
-        const sess = req.session;
         console.log(sess.passport.user);        
     } else {
         res.redirect("/login");
@@ -197,9 +203,13 @@ if(process.env.ENV === "PROD"){
         
     })
 } else {
-    const port = 3000 || process.env.PORT;
-    app.listen(port, () =>{
+    const port = 3000;
+    http.createServer(app).listen(port, () =>{
         console.log("App started at localhost:" + port);
         
-    })
+    });
+
+    https.createServer(optionsSSL, app).listen(443, () => {
+        console.log("App running on https://localhost:443");
+    });
 }
