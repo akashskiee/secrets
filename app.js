@@ -93,7 +93,7 @@ if(process.env.ENV === "PROD"){
     passport.use(new FacebookStrategy({
         clientID: process.env.FACEBOOK_ID,
         clientSecret: process.env.FACEBOOK_SECRET,
-        callbackURL: "https://evening-atoll-03139.herokuapp.com/auth/facebook/secrets"
+        callbackURL: "https://evening-atoll-03139.herokuapp.com/auth/facebook/callback"
     },
     (accessToken, refreshToken, profile, cb) => {
         User.findOrCreate({facebookId: profile.id }, (err, user) => {
@@ -105,7 +105,7 @@ if(process.env.ENV === "PROD"){
     passport.use(new FacebookStrategy({
         clientID: process.env.FACEBOOK_ID,
         clientSecret: process.env.FACEBOOK_SECRET,
-        callbackURL: 'http://localhost:3000/auth/facebook/secrets'
+        callbackURL: 'http://localhost:3000/auth/facebook/callback'
     },
     (accessToken, refreshToken, profile, cb) => {
         User.findOrCreate({facebookId: profile.id }, (err, user) => {
@@ -131,7 +131,7 @@ app.get("/auth/google/secrets",
 app.get("/auth/facebook", 
     passport.authenticate('facebook'));
 
-app.get("/auth/facebook/secrets", 
+app.get("/auth/facebook/callback", 
     passport.authenticate('facebook', {failureRedirect: '/login'})),
     (req, res) => {
         res.redirect('/secrets');
