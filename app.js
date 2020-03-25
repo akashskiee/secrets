@@ -131,7 +131,7 @@ app.get("/auth/google/secrets",
 app.get("/auth/facebook", 
     passport.authenticate('facebook'));
 
-app.get("auth/facebook/secrets", 
+app.get("/auth/facebook/secrets", 
     passport.authenticate('facebook', {failureRedirect: '/login'})),
     (req, res) => {
         res.redirect('/secrets');
