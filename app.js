@@ -49,7 +49,8 @@ const userSchema = new mongoose.Schema({
     password: String,
     googleId: String,
     googleUsername: String,
-    facebookId: String
+    facebookId: String,
+    secret: String
 });
 
 userSchema.plugin(passportLocalMongoose);
@@ -115,6 +116,7 @@ if(process.env.ENV === "PROD"){
         callbackURL: 'https://localhost:443/auth/facebook/callback'
     },
     (accessToken, refreshToken, profile, cb) => {
+        console.log(profile);
         User.findOrCreate({facebookId: profile.id }, (err, user) => {
             return cb(err, user);
         });
@@ -153,18 +155,45 @@ app.get("/register", (req, res) => {
 });
 
 app.get("/secrets", (req, res) => {
+    User.find({"secret": {$ne: null}}, (err, foundSecrets) => {
+        if(err){
+            console.log(err);            
+        } else {
+                res.render('secrets', {userStoredSecret: foundSecrets});
+        }
+    });
+});
+
+app.get("/submit", (req, res) => {
     if(req.isAuthenticated()){
-        res.render('secrets');
-        console.log(sess.passport.user);        
+        res.render("submit");
     } else {
-        res.redirect("/login");
+        res.redirect('/login');
     }
-})
+   
+});
 
 app.get("/logout", (req, res) => {
     req.logout();
     res.redirect('/')
 })
+
+app.post("/submit", (req, res) => {
+    const submittedSecret = req.body.secret;
+    
+    User.findById(req.user.id, (err, foundUser) => {
+        if(err) {
+            console.log(err);            
+        } else {
+            if(foundUser){
+                foundUser.secret = submittedSecret;
+                foundUser.save(() => {
+                    res.redirect("/secrets")
+                });
+            }
+        }
+    });
+});
 
 
 app.post("/register", (req, res) => {  
@@ -204,11 +233,14 @@ if(process.env.ENV === "PROD"){
     })
 } else {
     const port = 3000;
+    http.createServer(app).listen(port, '192.168.0.107', () =>{
+        console.log("App started at localhost:" + port);
+        
+    });
     http.createServer(app).listen(port, () =>{
         console.log("App started at localhost:" + port);
         
     });
-
     https.createServer(optionsSSL, app).listen(443, () => {
         console.log("App running on https://localhost:443");
     });
