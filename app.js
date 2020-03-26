@@ -49,7 +49,7 @@ const userSchema = new mongoose.Schema({
     email: String,
     password: String,
     googleId: String,
-    googleUsername: String,
+    username: String,
     facebookId: String,
     githubId: String,
     secret: String
@@ -78,7 +78,7 @@ passport.use(new GoogleStrategy({
     userProfileURL: "https://www.googleapis.com/oauth2/v3/userinfo"
   },
   function(accessToken, refreshToken, profile, cb) {    
-    User.findOrCreate({ googleId: profile.id }, function (err, user) {
+    User.findOrCreate({ googleId: profile.id, username: profile.name.givenName }, function (err, user) {
       return cb(err, user);
     });
   }
@@ -92,7 +92,7 @@ passport.use(new GoogleStrategy({
       },
       function(accessToken, refreshToken, profile, cb) {
         const proName = profile.name.givenName;
-        User.findOrCreate({ googleId: profile.id, googleUsername: profile.name.givenName }, function (err, user) {
+        User.findOrCreate({ googleId: profile.id, username: profile.name.givenName }, function (err, user) {
           return cb(err, user);
         });
       }
@@ -118,7 +118,6 @@ if(process.env.ENV === "PROD"){
         callbackURL: 'https://localhost:443/auth/facebook/callback'
     },
     (accessToken, refreshToken, profile, cb) => {
-        console.log(profile);
         User.findOrCreate({facebookId: profile.id }, (err, user) => {
             return cb(err, user);
         });
@@ -131,13 +130,12 @@ passport.use(new GithubStrategy({
     clientSecret: process.env.GITHUB_SECRET,
     callbackURL: 'https://localhost:443/auth/github/callback'
 },
-
-(accessToken, refreshToken, profile, done) => {
-    User.findOrCreate({githubId: profile.id}, (err, user) => {
-        return done(err, user);
-    });
-}
-));
+(accessToken, refreshToken, profile, cb) => {
+    console.log(profile);
+    User.findOrCreate({githubId: profile.id, username : profile.username }, (err, user) => {
+        return cb(err, user);
+    })
+}))
 
 app.get("/", (req, res) => {
     res.render('home');
