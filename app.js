@@ -10,6 +10,7 @@ const passportLocalMongoose = require('passport-local-mongoose');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const findOrCreate = require('mongoose-findorcreate');
 const FacebookStrategy = require('passport-facebook').Strategy;
+const GithubStrategy = require('passport-github2').Strategy;
 const https = require('https');
 const http = require('http');
 const fs = require('fs');
@@ -50,6 +51,7 @@ const userSchema = new mongoose.Schema({
     googleId: String,
     googleUsername: String,
     facebookId: String,
+    githubId: String,
     secret: String
 });
 
@@ -124,6 +126,19 @@ if(process.env.ENV === "PROD"){
     ));
 }
 
+passport.use(new GithubStrategy({
+    clientID: process.env.GITHUB_ID,
+    clientSecret: process.env.GITHUB_SECRET,
+    callbackURL: 'https://localhost:443/auth/github/callback'
+},
+
+(accessToken, refreshToken, profile, done) => {
+    User.findOrCreate({githubId: profile.id}, (err, user) => {
+        return done(err, user);
+    });
+}
+));
+
 app.get("/", (req, res) => {
     res.render('home');
 });
@@ -143,6 +158,15 @@ app.get("/auth/facebook",
 app.get("/auth/facebook/callback", 
     passport.authenticate('facebook', {failureRedirect: '/login'}),
     (req, res) => {
+        res.redirect('/secrets');
+    });
+
+app.get("/auth/github", 
+    passport.authenticate('github', {scope: ['user: email']}));
+
+app.get("/auth/github/callback", 
+    passport.authenticate('github', {failureRedirect: '/login'}),
+    (req,res) => {
         res.redirect('/secrets');
     });
 
@@ -233,10 +257,6 @@ if(process.env.ENV === "PROD"){
     })
 } else {
     const port = 3000;
-    http.createServer(app).listen(port, '192.168.0.107', () =>{
-        console.log("App started at localhost:" + port);
-        
-    });
     http.createServer(app).listen(port, () =>{
         console.log("App started at localhost:" + port);
         
