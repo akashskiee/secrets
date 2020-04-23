@@ -41,7 +41,8 @@ const dbPass = process.env.DB_PASS;
 const dbURL = 'mongodb+srv://' + dbUser + ':' + dbPass + '@cluster0-qnmpu.mongodb.net/secretsDB';
 mongoose.connect(dbURL,  { useNewUrlParser: true,  useUnifiedTopology: true, useFindAndModify: false});
 } else {
-    mongoose.connect("mongodb://localhost:27017/secretsDB", { useNewUrlParser: true,  useUnifiedTopology: true, useFindAndModify: false});
+    mongoose.connect("mongodb://localhost:27017/secretsDB", { useNewUrlParser: true,  useUnifiedTopology: true,
+     useFindAndModify: false});
 }
 mongoose.set("useCreateIndex", true);
 
